@@ -1,80 +1,76 @@
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 public class TrainConsistManagementAppTest {
 
-    // 1. Valid capacity should create object successfully
+    // 1. Safe cargo assignment
     @Test
-    void testException_ValidCapacityCreation() {
+    void testCargo_SafeAssignment() {
+        GoodsBogie cylBogie = new CylindricalBogie("CB1");
+
         assertDoesNotThrow(() -> {
-            TrainConsistManagementApp.Bogie bogie =
-                    new TrainConsistManagementApp.Bogie("Sleeper-S1", 72);
-
-            assertEquals("Sleeper-S1", bogie.name);
-            assertEquals(72, bogie.capacity);
+            cylBogie.assignCargo(CargoType.PETROLEUM);
         });
+
+        assertEquals(CargoType.PETROLEUM, cylBogie.getCargo());
     }
 
-    // 2. Negative capacity should throw exception
+    // 2. Unsafe assignment handled (exception caught internally)
     @Test
-    void testException_NegativeCapacityThrowsException() {
-        Exception exception = assertThrows(
-                TrainConsistManagementApp.InvalidCapacityException.class,
-                () -> new TrainConsistManagementApp.Bogie("Invalid-X1", -10)
-        );
+    void testCargo_UnsafeAssignmentHandled() {
+        GoodsBogie rectBogie = new RectangularBogie("RB1");
 
-        assertTrue(exception.getMessage().contains("Invalid capacity"));
+        // Capture console output
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(output));
+
+        rectBogie.assignCargo(CargoType.PETROLEUM);
+
+        String result = output.toString();
+
+        assertTrue(result.contains("ERROR: Unsafe cargo! Petroleum cannot be loaded"));
     }
 
-    // 3. Zero capacity should throw exception
+    // 3. Cargo not assigned after failure
     @Test
-    void testException_ZeroCapacityThrowsException() {
-        Exception exception = assertThrows(
-                TrainConsistManagementApp.InvalidCapacityException.class,
-                () -> new TrainConsistManagementApp.Bogie("Zero-Z1", 0)
-        );
+    void testCargo_CargoNotAssignedAfterFailure() {
+        GoodsBogie rectBogie = new RectangularBogie("RB1");
 
-        assertTrue(exception.getMessage().contains("capacity must be positive"));
+        rectBogie.assignCargo(CargoType.PETROLEUM);
+
+        assertNull(rectBogie.getCargo());
     }
 
-    // 4. Validate exact exception message
+    // 4. Program continues after exception
     @Test
-    void testException_ExceptionMessageValidation() {
-        Exception exception = assertThrows(
-                TrainConsistManagementApp.InvalidCapacityException.class,
-                () -> new TrainConsistManagementApp.Bogie("Invalid-X1", -5)
-        );
+    void testCargo_ProgramContinuesAfterException() {
+        GoodsBogie rectBogie = new RectangularBogie("RB1");
+        GoodsBogie cylBogie = new CylindricalBogie("CB1");
 
-        assertEquals(
-                "Invalid capacity (-5) for bogie 'Invalid-X1': capacity must be positive.",
-                exception.getMessage()
-        );
-    }
-
-    // 5. Object integrity after creation
-    @Test
-    void testException_ObjectIntegrityAfterCreation() throws Exception {
-        TrainConsistManagementApp.Bogie bogie =
-                new TrainConsistManagementApp.Bogie("AC Chair-A1", 60);
-
-        assertEquals("AC Chair-A1", bogie.name);
-        assertEquals(60, bogie.capacity);
-    }
-
-    // 6. Multiple valid bogies creation
-    @Test
-    void testException_MultipleValidBogiesCreation() {
         assertDoesNotThrow(() -> {
-            TrainConsistManagementApp.Bogie b1 =
-                    new TrainConsistManagementApp.Bogie("Sleeper-S1", 72);
-            TrainConsistManagementApp.Bogie b2 =
-                    new TrainConsistManagementApp.Bogie("General-G1", 90);
-            TrainConsistManagementApp.Bogie b3 =
-                    new TrainConsistManagementApp.Bogie("First Class-F1", 24);
-
-            assertNotNull(b1);
-            assertNotNull(b2);
-            assertNotNull(b3);
+            rectBogie.assignCargo(CargoType.PETROLEUM); // unsafe
+            cylBogie.assignCargo(CargoType.COAL);       // should still execute
         });
+
+        assertEquals(CargoType.COAL, cylBogie.getCargo());
+    }
+
+    // 5. Finally block execution
+    @Test
+    void testCargo_FinallyBlockExecution() {
+        GoodsBogie rectBogie = new RectangularBogie("RB1");
+
+        // Capture console output
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(output));
+
+        rectBogie.assignCargo(CargoType.PETROLEUM);
+
+        String result = output.toString();
+
+        assertTrue(result.contains("Assignment attempt completed for RB1"));
     }
 }
